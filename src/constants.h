@@ -1,0 +1,15 @@
+#ifndef __CONSTANTS_H__
+#define __CONSTANTS_H__
+
+#define WORD_SIZE 4
+#define BLOCK_SIZE_IN_WORD 4
+
+#define BLOCK_SIZE_IN_INT16 (WORD_SIZE * BLOCK_SIZE_IN_WORD)
+
+#define INT8_IN_INT16 2
+
+#define BLOCK_SIZE_IN_INT8 (INT8_IN_INT16 * BLOCK_SIZE_IN_INT16)
+
+#define BITS_IN_BYTE 8
+
+#endif /* __CONSTANTS_H__ */
