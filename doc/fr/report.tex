@@ -1,0 +1,287 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{libertine}
+\usepackage{inconsolata}
+
+\usepackage{tikz}
+
+\usepackage{amssymb}
+\usepackage{hyperref}
+
+\newcommand{\burl}[1]{\texttt{<}\url{#1}\texttt{>}}
+
+\title{\og Super AES \fg}
+\author{Antoine \bsc{Catton} et Jessy \bsc{Mauclair-Richalet}}
+\date{Mardi 13 novembre 2013}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\chapter{Introduction}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[scale=1.5]
+\draw[thick] (0,0) grid (4,4);
+\foreach \y in {0,...,3}
+{
+    \foreach \x in {0,...,3}
+    {
+        \draw ({\x + 0.5},{3 - \y + 0.5}) node {$a_{\y,\x}$};
+    }
+}
+\fill[green!50,fill opacity=0.40] (-0.1,4.1) rectangle (1.1,2.9);
+\fill[red!50,fill opacity=0.40] (-0.1,2.1) rectangle (4.1,0.9);
+\end{tikzpicture}
+\label{fig:aesbloc}
+\caption{Représentation d'un bloc sous AES}
+\end{figure}
+
+\section{Vocabulaire}
+
+L'algorithme de chiffrement AES est un algorithme de chiffrement \og par bloc
+\fg.  Cela signifie que le message à chiffrer est découpé en cellules de même
+taille, représenté par la figure~\ref{fig:aesbloc}. Un bloc est représenté par
+une matrice de 4 sur 4 \og atomes \fg\ (surligné en vert dans la
+figure~\ref{fig:aesbloc}).
+
+Une ligne de cette matrice est appelé un \og mot \fg\ (surligné en rouge dans
+la figure~\ref{fig:aesbloc}).
+
+\section{Contexte}
+
+De nos jours, le standard de chiffrement symétrique le plus utilisé est AES
+\footnote{\emph{Advanced Encryption Standard}}.  Il est notamment destiné à remplacer le
+standard DES\footnote{\emph{Data Encryption Standard}} qui peut être
+\og brute-forcé \fg.\footnote{\url{https://en.wikipedia.org/wiki/EFF_DES_cracker}}
+
+AES est reconnu dans le monde de la cryptographie comme étant le standard le plus sûr.
+(au jour où ce rapport est rédigé) Il est notamment, au jour où ce rapport est rédigé,
+utilisé par le gouvernement des États-Unis pour sécuriser ses données.
+
+AES repose un enchainement de fonctions non-linéaires qui mélange et substituent les
+atome d'un bloc des données à chiffrer. Dans un sens, on pourrait le définir comme une
+version améliorer d'Enigma.\footnote{\url{https://fr.wikipedia.org/wiki/Enigma_(machine)}}.
+
+La non-linéarité de ces fonctions reposent sur les corps de finis de Galois. Le
+corps fini de Galois utilisé pour AES contient $2^{8}$ éléments. Les atômes
+sont donc représentés sur un octet. (soit 8 bits)
+
+\section{Objectif}
+
+Dans le cadre de l'unité de valeur GS15 \og Cryptologie et signature
+électronique \fg, nous devions implémenter un algorithme de chiffrement
+reposant sur le principe d'AES. Contrairement à AES, cet algorithme de
+chiffrement devra utiliser un corps de Galois à $2^{16}$ éléments ; les atomes
+de l'algorithme seront donc représentés sur deux octets. (soit 16 bits)
+
+Ce projet a donc été baptisé \og SuperAES \fg\ dû au fait qu'il double la complexité
+de l'algorithme AES.
+
+
+\chapter{Modélisation mathématique}
+
+\section{Choix des constantes}
+
+Nous avons choisi les constantes de notre projet en utilisant au maximum des
+nombres premiers. Il est a noté qu'il y a aucune preuve mathématique que
+cela ne rend pas plus difficile la cryptanalyse de notre algorithme.
+
+\section{Corps de Galois}
+
+Pour notre implémentation de \og Super AES \fg, nous avons choisis le corps
+$G\mathbb{F}_{2^{16}}$ défini par l'équation~\ref{eq:galoisfield}.
+
+\begin{equation}
+\label{eq:galoisfield}
+\mathbb{Z}/2\mathbb{Z}/<M> \mbox{ avec } M = X^{16} + X^{13} + X^{11} + X^{7} + X^{5} + X^{3} + 1
+\end{equation}
+
+Il a été trouvé dans la liste donnée octave des polynômes irréductibles données par octave
+grâce à :
+
+\begin{verbatim}
+octave:1> primpoly(16, 'all')
+[...]
+D^16+D^13+D^11+D^6+D^5+D^4+D^3+D+1
+D^16+D^13+D^11+D^7+D^5+D^3+1
+D^16+D^13+D^11+D^7+D^6+D^2+1
+[...]
+\end{verbatim}
+
+Nous avons choisi ce polynôme car c'est celui qui possède le plus gros nombre
+de monômes de degrés premiers par rapport au nombre de monômes de degrés non
+premier.
+
+\section{\emph{SubBytes}}
+
+Nous avons voulu choisir la matrice $A$ circulante basée sur le vecteur ayant pour
+valeur 1 à chaque nombre premier ; malheureusement, cette matrice est singulière.
+Nous avons donc aussi mis le premier indice de ce vecteur à 1 pour rendre la matrice
+réversible.
+
+Nous avons donc défini la matrice $A$ par l'équation~\ref{eq:amatrix}.
+
+\begin{equation}
+\label{eq:amatrix}
+A = \left(
+\begin{array}{cccccccccccccccc}
+1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 \\
+1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 \\
+1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 \\
+0 & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 \\
+1 & 0 & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 \\
+0 & 1 & 0 & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 \\
+1 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 \\
+1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 \\
+0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 0 & 0 & 1 \\
+1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 1 & 0 \\
+0 & 0 & 0 & 1 & 0 & 1 & 0 & 0 & 0 & 1 & 0 & 1 & 0 & 1 & 1 & 1 \\
+\end{array}
+\right)
+\end{equation}
+
+Elle a été généré par :
+
+\begin{verbatim}
+octave:1> A_matrix = toeplitz([1 1 1 0 1 0 1 0 0 0 1 0 1 0 0 0],
+>                             [1 0 0 0 1 0 1 0 0 0 1 0 1 0 1 1]);
+\end{verbatim}
+
+Pour le vecteur $C$, nous avons utilisé le générateur de nombre aléatoire intégré dans le
+noyau Linux comme il suit :
+
+\begin{verbatim}
+octave:1> de2bi(fread(fopen('/dev/random', 'r'), 1, 'uint16'), 16)
+\end{verbatim}
+
+Notre vecteur $C$ est donc défini par l'équation~\ref{eq:cvector}.
+
+\begin{equation}
+\label{eq:cvector}
+C = \left(
+\begin{array}{cccccccccccccccc}
+1 & 1 & 0 & 1 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 1 & 0 \\
+\end{array}
+\right)
+\end{equation}
+
+Nous avons utilisé la fonction \verb|inv| pour inverser la matrice $A$ dans
+notre corps de Galois.
+
+\begin{verbatim}
+octave:1> inv(galois_A_matrix)
+\end{verbatim}
+
+La matrice $A'$ obtenue est définie par l'équation~\ref{eq:amatrixprim}
+
+\begin{equation}
+\label{eq:amatrixprim}
+A' = \left(
+\begin{array}{cccccccccccccccc}
+0 & 1 & 0 & 0 & 1 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 \\
+1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 \\
+1 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 \\
+1 & 1 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 \\
+1 & 1 & 1 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 0 & 1 & 0 & 0 & 1 \\
+1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 0 & 1 & 0 & 0 \\
+0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 0 & 1 \\
+1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 0 & 1 & 1 & 0 \\
+0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 0 & 1 & 1 \\
+1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 0 & 1 \\
+1 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 & 0 \\
+0 & 1 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 & 0 \\
+0 & 0 & 1 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 & 1 \\
+1 & 0 & 0 & 1 & 1 & 0 & 0 & 1 & 0 & 0 & 1 & 1 & 1 & 1 & 1 & 0 \\
+\end{array}
+\right)
+\end{equation}
+
+Puis nous avons calculé le vecteur $C'$ grâce à :
+
+\begin{verbatim}
+octave:1> inv(galois_A_matrix) * galois_C_matrix
+\end{verbatim}
+
+On obtient donc le vecteur $C'$ représenté par l'équation~\ref{cvectorprim}.
+
+\begin{equation}
+\label{eq:cvectorprim}
+C' = \left(
+\begin{array}{cccccccccccccccc}
+0 & 0 & 0 & 1 & 1 & 0 & 1 & 1 & 1 & 1 & 0 & 0 & 0 & 1 & 0 & 1 \\
+\end{array}
+\right)
+\end{equation}
+
+\section{\emph{MixColumns}}
+
+Pour la matrice $X$ de la fonction \emph{MixColumns} nous avons choisi une
+matrice circulant avec comme vecteur de base les 4 plus grand nombres premiers
+inférieurs à $2^{16}$, c'est-à-dire : 65479, 65497, 65519 et 65521.
+
+Pour que la matrice $X$ soit réversible nous avons remplacé 65521 par 65520 qui
+n'est pas premier.
+
+Notre matrice $X$ final est donc défini par l'équation~\ref{eq:xmatrix}.
+
+\begin{equation}
+\label{eq:xmatrix}
+X = \left(
+\begin{array}{cccc}
+(\verb|FFC7|)_{16} & (\verb|FFF0|)_{16} & (\verb|FFEF|)_{16} & (\verb|FFD9|)_{16} \\
+(\verb|FFD9|)_{16} & (\verb|FFC7|)_{16} & (\verb|FFF0|)_{16} & (\verb|FFEF|)_{16} \\
+(\verb|FFEF|)_{16} & (\verb|FFD9|)_{16} & (\verb|FFC7|)_{16} & (\verb|FFF0|)_{16} \\
+(\verb|FFF0|)_{16} & (\verb|FFEF|)_{16} & (\verb|FFD9|)_{16} & (\verb|FFC7|)_{16} \\
+\end{array}
+\right)
+\end{equation}
+
+Nous avons ensuite inversé la matrice $X$ grâce à \emph{Octave} en utilisant
+la fonction \verb|inv|. On obtient donc la matrice $X'$ de l'équation~\ref{eq:xmatrixprim}
+
+\begin{equation}
+\label{eq:xmatrixprim}
+X' = \left(
+\begin{array}{cccc}
+(\verb|55EF|)_{16} & (\verb|5199|)_{16} & (\verb|55C7|)_{16} & (\verb|51B0|)_{16} \\
+(\verb|51B0|)_{16} & (\verb|55EF|)_{16} & (\verb|5199|)_{16} & (\verb|55C7|)_{16} \\
+(\verb|55C7|)_{16} & (\verb|51B0|)_{16} & (\verb|55EF|)_{16} & (\verb|5199|)_{16} \\
+(\verb|5199|)_{16} & (\verb|55C7|)_{16} & (\verb|51B0|)_{16} & (\verb|55EF|)_{16} \\
+\end{array}
+\right)
+\end{equation}
+
+
+\chapter{Implémentation}
+
+\chapter{Conclusion}
+
+
+\begin{thebibliography}{99}
+
+\bibitem{bib:fips:aes} National Institute of Standards and Technology.
+\emph{Advanced Encryption Standard (AES)}. Federal Information Processing
+Standards, 2001. 51 p.
+\burl{http://csrc.nist.gov/publications/fips/fips197/fips-197.pdf}
+
+\bibitem{bib:wiki:aes} Contributeurs de Wikipédia. \emph{Advanced Encryption Standard}. [en~ligne].
+Wikipédia -- l'encyclopédie libre, 25 décembre 2012. \burl{https://en.wikipedia.org/w/index.php?title=Advanced_Encryption_Standard&oldid=529763235}.
+
+\end{thebibliography}
+
+
+\end{document}
