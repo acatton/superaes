@@ -6,9 +6,16 @@
 /depcomp
 /install-sh
 /missing
+/config.guess
+/config.sub
+/libtool
+/ltmain.sh
 
 Makefile
 Makefile.in
 .deps
+.libs
 
 *.o
+*.la
+*.lo
