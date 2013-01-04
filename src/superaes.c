@@ -26,16 +26,16 @@
 #include "superaes.h"
 #include "tables.h"
 
+#include <stdio.h>
 static void superaes_AddRoundKey(uint16_t *state,
         const struct key *key,
         int from)
 {
-    int i = from * WORD_SIZE,
-        j,
-        to = i + BLOCK_SIZE_IN_INT16;
+    int i;
+    from = from * WORD_SIZE;
 
-    for (j = 0; i < to; i++, j++)
-        state[j] ^= key->value[i];
+    for (i = 0; i < BLOCK_SIZE_IN_INT16; i++)
+        state[i] ^= key->value[i+from];
 }
 
 static void state_substitute(uint16_t *state, const uint16_t *table)
