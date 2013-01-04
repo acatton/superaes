@@ -20,10 +20,12 @@
  */
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "constants.h"
 #include "convert.h"
 #include "key.h"
+#include "tables.h"
 
 #define BUFFER_SIZE WORD_SIZE_IN_INT8
 
@@ -111,4 +113,80 @@ void destroy_key(struct key *key)
 {
     free(key->value);
     free(key);
+}
+
+/* +------------+------------------+ *
+ * | Bit length | Number of rounds | *
+ * +------------+------------------+ *
+ * |    320     |       15         | *
+ * |    480     |       30         | *
+ * |    640     |       45         | *
+ * +------------+------------------+ */
+#define number_of_round(bit_length) \
+    ((bit_length == 320) ? 15 : ((bit_length == 480) ? 30 : 45))
+
+static void superaes_SubWord(uint16_t *word)
+{
+    int i;
+
+    for (i = 0; i < WORD_SIZE; i++) {
+        word[i] = subbytes_table[word[i]];
+    }
+}
+
+static void superaes_RotWord(uint16_t *word)
+{
+    int      i;
+    uint16_t tmp;
+
+    tmp = word[0];
+    for (i = 1; i < WORD_SIZE; i++)
+        word[i-1] = word[i];
+    word[i-1] = tmp;
+}
+
+static void superaes_Rcon(uint16_t *word, int n)
+{
+    word[0] ^= rcon[n];
+}
+
+struct key *superaes_KeyExpansion(struct key *in)
+{
+    int         i, j,
+                n_word_key,
+                n_word_out;
+    struct key *out;
+    int16_t     temp[WORD_SIZE];
+
+    if (!is_valid_key_length_bits(in->size * BITS_IN_INT16))
+        return NULL;
+
+    out = malloc(sizeof(struct key));
+    n_word_out = number_of_round(in->size * BITS_IN_INT16) * BLOCK_SIZE_IN_WORD;
+    out->size = n_word_out * WORD_SIZE;
+    out->value = malloc(sizeof(uint16_t) * out->size);
+
+    memcpy(out->value, in->value, in->size * sizeof(uint16_t));
+
+    n_word_key = in->size / WORD_SIZE;
+    i = in->size / WORD_SIZE;
+    while (i < n_word_out) {
+        /* Copy previous word */
+        for (j = 0; j < WORD_SIZE ; j++) {
+            temp[j] = out->value[(i-1)*WORD_SIZE + j];
+        }
+
+        if ((i % n_word_key) == 0) {
+            superaes_RotWord(temp);
+            superaes_SubWord(temp);
+            superaes_Rcon(temp, i/n_word_key);
+        }
+
+        for (j = 0; j < WORD_SIZE ; j++) {
+            out->value[i*WORD_SIZE + j] = out->value[(i-n_word_key)*WORD_SIZE + j] ^ temp[j];
+        }
+        i++;
+    }
+
+    return out;
 }

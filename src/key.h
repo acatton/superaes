@@ -31,5 +31,6 @@ struct key {
 
 struct key *read_key(FILE *);
 void        destroy_key(struct key *);
+struct key *superaes_KeyExpansion(struct key *);
 
 #endif /* __KEY_H__ */

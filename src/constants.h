@@ -12,5 +12,6 @@
 #define WORD_SIZE_IN_INT8 (WORD_SIZE * INT8_IN_INT16)
 
 #define BITS_IN_BYTE 8
+#define BITS_IN_INT16 16
 
 #endif /* __CONSTANTS_H__ */
