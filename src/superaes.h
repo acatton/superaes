@@ -23,12 +23,9 @@
 
 #include <stdint.h>
 
-struct key {
-    unsigned int  size;
-    uint16_t     *value;
-};
+#include "key.h"
 
-int        superaes_encrypt(const uint16_t *, uint16_t *, const struct key);
-int        superaes_decrypt(const uint16_t *, uint16_t *, const struct key);
+int        superaes_encrypt(const uint16_t *, uint16_t *, const struct key *);
+int        superaes_decrypt(const uint16_t *, uint16_t *, const struct key *);
 
 #endif /* __SUPERAES_H__ */

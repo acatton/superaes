@@ -43,5 +43,6 @@ extern const uint16_t            lookup_FFF1_table[TABLE_SIZE];
 extern const struct lookup_match lookup_table_list[];
 extern const uint16_t            mixcolumn_matrix[MIXCOLUMNS_SIZE_Y][MIXCOLUMNS_SIZE_X];
 extern const uint16_t            invmixcolumn_matrix[MIXCOLUMNS_SIZE_Y][MIXCOLUMNS_SIZE_X];
+extern const uint16_t            rcon[TABLE_SIZE];
 
 #endif /* __TABLES_H__ */
