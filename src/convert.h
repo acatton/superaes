@@ -23,7 +23,32 @@
 
 #include <stdint.h>
 
-void uint8_array_to_uint16(const uint8_t *, int, uint16_t *);
-void uint16_array_to_uint8(const uint16_t *, int, uint8_t *);
+static inline void uint8_array_to_uint16(const uint8_t *src, int size, uint16_t *dest)
+{
+    int i, j, k;
+
+    size /= INT8_IN_INT16;
+    for (i=0, j=0; i < size ; i++, j+=INT8_IN_INT16) {
+        dest[i] = 0;
+        for (k = 0; k < INT8_IN_INT16; k++) {
+            dest[i] <<= BITS_IN_BYTE;
+            dest[i] += src[j+k];
+        }
+    }
+}
+
+static inline void uint16_array_to_uint8(const uint16_t *src, int size, uint8_t *dest)
+{
+    int i, j, k;
+    uint16_t tmp;
+
+    for (i=0, j=0; i < size ; i++, j+=INT8_IN_INT16) {
+        tmp = src[i];
+        for (k = INT8_IN_INT16-1; k >= 0; k--) {
+            dest[j+k] = (uint8_t) tmp;
+            tmp >>= BITS_IN_BYTE;
+        }
+    }
+}
 
 #endif /* __CONVERT_H__ */
