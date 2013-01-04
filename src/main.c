@@ -23,7 +23,6 @@
 
 #include "constants.h"
 #include "convert.h"
-#include "key.h"
 #include "superaes.h"
 
 enum action_type {
@@ -73,7 +72,8 @@ int main(int argc, char *argv[])
     FILE    *in,
             *out;
 
-    struct key *key;
+    struct key *key = NULL,
+               *expanded_key = NULL;
     enum action_type action;
 
     /* No error for the moment */
@@ -88,6 +88,9 @@ int main(int argc, char *argv[])
     if (key == NULL) {
         error = 1;
         goto out;
+    }
+    else {
+        expanded_key = superaes_KeyExpansion(key);
     }
     if (argc > 2)
         action = ACTION_TYPE_DECRYPT;
@@ -128,6 +131,9 @@ int main(int argc, char *argv[])
 out:
     if (key != NULL) {
         destroy_key(key);
+    }
+    if (expanded_key != NULL) {
+        destroy_key(expanded_key);
     }
     if (error)
         return EXIT_FAILURE;
