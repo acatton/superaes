@@ -23,6 +23,7 @@
 
 #include "constants.h"
 #include "convert.h"
+#include "key.h"
 #include "superaes.h"
 
 enum action_type {
@@ -30,22 +31,8 @@ enum action_type {
     ACTION_TYPE_DECRYPT
 };
 
-/* TODO: Key generation */
-struct key read_key(FILE *f)
-{
-    struct key key;
-    int i = 20 * sizeof(uint16_t);
-    key.value = malloc(i);
-    key.size = i;
-    for (i--; i >= 0; i--) {
-        key.value[i] = i % 13;
-    }
-    return key;
-}
-
-
 static int output_superaes(const uint8_t *block,
-        const struct key key,
+        const struct key *key,
         enum action_type type,
         FILE *out)
 {
@@ -86,7 +73,7 @@ int main(int argc, char *argv[])
     FILE    *in,
             *out;
 
-    struct key key = read_key(NULL);
+    struct key *key;
     enum action_type action;
 
     /* No error for the moment */
@@ -97,7 +84,12 @@ int main(int argc, char *argv[])
     in = stdin;
     out = stdout;
     action = ACTION_TYPE_ENCRYPT;
-    if (argc > 1)
+    key = read_key(fopen(argv[1], "r"));
+    if (key == NULL) {
+        error = 1;
+        goto out;
+    }
+    if (argc > 2)
         action = ACTION_TYPE_DECRYPT;
 
     /* Read blocks and encrypt them*/
@@ -134,6 +126,9 @@ int main(int argc, char *argv[])
     }
 
 out:
+    if (key != NULL) {
+        destroy_key(key);
+    }
     if (error)
         return EXIT_FAILURE;
     return EXIT_SUCCESS;

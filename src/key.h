@@ -18,14 +18,18 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#ifndef __SUPERAES_H__
-#define __SUPERAES_H__
+#ifndef __KEY_H__
+#define __KEY_H__
+#include <stdio.h>
 
-#include <stdint.h>
+#include "constants.h"
 
-#include "key.h"
+struct key {
+    unsigned int  size;
+    uint16_t     *value;
+};
 
-int        superaes_encrypt(const uint16_t *, uint16_t *, const struct key *);
-int        superaes_decrypt(const uint16_t *, uint16_t *, const struct key *);
+struct key *read_key(FILE *);
+void        destroy_key(struct key *);
 
-#endif /* __SUPERAES_H__ */
+#endif /* __KEY_H__ */

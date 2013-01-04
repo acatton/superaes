@@ -22,11 +22,12 @@
 #include <string.h>
 
 #include "constants.h"
+#include "key.h"
 #include "superaes.h"
 #include "tables.h"
 
 static void superaes_AddRoundKey(uint16_t *state,
-        const struct key key,
+        const struct key *key,
         int from)
 {
     int i = from * WORD_SIZE,
@@ -34,7 +35,7 @@ static void superaes_AddRoundKey(uint16_t *state,
         to = i + BLOCK_SIZE_IN_INT16;
 
     for (j = 0; i < to; i++, j++)
-        state[j] ^= key.value[i];
+        state[j] ^= key->value[i];
 }
 
 static void state_substitute(uint16_t *state, const uint16_t *table)
@@ -150,11 +151,11 @@ static void superaes_InvMixColumns(uint16_t *state)
     mixcolumns(state, invmixcolumn_matrix);
 }
 
-int superaes_encrypt(const uint16_t *in, uint16_t *out, const struct key key)
+int superaes_encrypt(const uint16_t *in, uint16_t *out, const struct key *key)
 {
     int round_amount, i;
 
-    round_amount = key.size / BLOCK_SIZE_IN_WORD;
+    round_amount = key->size / BLOCK_SIZE_IN_WORD;
     memcpy(out, in, sizeof(uint16_t) * BLOCK_SIZE_IN_INT16);
 
     /* AES Cipher Algorithm */
@@ -171,11 +172,11 @@ int superaes_encrypt(const uint16_t *in, uint16_t *out, const struct key key)
 
     return 0;
 }
-int superaes_decrypt(const uint16_t *in, uint16_t *out, const struct key key)
+int superaes_decrypt(const uint16_t *in, uint16_t *out, const struct key *key)
 {
     int round_amount, i;
 
-    round_amount = key.size / BLOCK_SIZE_IN_WORD;
+    round_amount = key->size / BLOCK_SIZE_IN_WORD;
     memcpy(out, in, sizeof(uint16_t) * BLOCK_SIZE_IN_INT16);
 
     /* AES Decipher Algorithm */
