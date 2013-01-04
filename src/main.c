@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include "constants.h"
+#include "convert.h"
 #include "superaes.h"
 
 enum action_type {
@@ -54,13 +55,7 @@ static int output_superaes(const uint8_t *block,
     uint8_t   out_block[BLOCK_SIZE_IN_INT8];
     int       i, j, k;
 
-    for (i=0, j=0; i < BLOCK_SIZE_IN_INT16 ; i++, j+=INT8_IN_INT16) {
-        block16_in[i] = 0;
-        for (k = 0; k < INT8_IN_INT16; k++) {
-            block16_in[i] <<= BITS_IN_BYTE;
-            block16_in[i] += block[j+k];
-        }
-    }
+    uint8_array_to_uint16(block, BLOCK_SIZE_IN_INT8, block16_in);
 
     if (type == ACTION_TYPE_ENCRYPT) {
         if (superaes_encrypt(block16_in, block16_out, key) < 0)
@@ -71,13 +66,7 @@ static int output_superaes(const uint8_t *block,
     }
 
     /* Converting back to uint8_t to be endianness independant */
-    for (i=0, j=0; i < BLOCK_SIZE_IN_INT16 ; i++, j+=INT8_IN_INT16) {
-        tmp = block16_out[i];
-        for (k=INT8_IN_INT16-1; k >= 0; k--) {
-            out_block[j+k] = (uint8_t) tmp;
-            tmp >>= BITS_IN_BYTE;
-        }
-    }
+    uint16_array_to_uint8(block16_out, BLOCK_SIZE_IN_INT16, out_block);
 
     /* XXX: Bad code structure, this function shoudn't do any action, just return
      * the result to print
