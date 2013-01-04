@@ -102,9 +102,8 @@ out:
         free(current);
         current = next;
     }
-    if (error) {
+    if (error)
         return NULL;
-    }
     return key;
 }
 
