@@ -111,6 +111,7 @@ int main(int argc, char *argv[])
     if (feof(in) != 0) { /* End of file */
         if (to_read < BLOCK_SIZE_IN_INT8) { /* Uncomplete block */
             /* PKCS7 Padding */
+            /* TODO: When decrypt, detect and remove padding */
             read = BLOCK_SIZE_IN_INT8 - to_read;
 
             for (i = read; i < BLOCK_SIZE_IN_INT8; i++)
