@@ -36,10 +36,8 @@ static int output_superaes(const uint8_t *block,
         FILE *out)
 {
     uint16_t  block16_in[BLOCK_SIZE_IN_INT16],
-              block16_out[BLOCK_SIZE_IN_INT16],
-              tmp;
+              block16_out[BLOCK_SIZE_IN_INT16];
     uint8_t   out_block[BLOCK_SIZE_IN_INT8];
-    int       i, j, k;
 
     uint8_array_to_uint16(block, BLOCK_SIZE_IN_INT8, block16_in);
 
