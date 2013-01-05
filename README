@@ -1,0 +1,29 @@
+There's no usage help. This file explains the command line options.
+
+The usage is :
+  superaes -k <KEY FILE> [OPTION] [INPUT FILE]
+
+For example :
+  superaes -k key.superaes -o output.txt message.txt
+  echo message | superaes -e -k key.superaes | mail secret@example.com
+
+If the INPUT FILE is not specified, superaes will read from standard input.
+
+The options are :
+
+  -k <KEY FILE>
+    Specify the key file. This option is required.
+
+    The key file can be generated from one of this command line :
+      head -c40 /dev/random
+      head -c60 /dev/random
+      head -c80 /dev/random
+
+  -e
+    Encrypt the message
+
+  -d
+    Decrypt the message
+
+  -o <OUTPUT FILE>
+    Specify output file.
