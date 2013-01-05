@@ -155,7 +155,7 @@ int superaes_encrypt(const uint16_t *in, uint16_t *out, const struct key *key)
 {
     int round_amount, i;
 
-    round_amount = key->size / BLOCK_SIZE_IN_WORD;
+    round_amount = key->size / BLOCK_SIZE_IN_WORD / WORD_SIZE - 1;
     memcpy(out, in, sizeof(uint16_t) * BLOCK_SIZE_IN_INT16);
 
     /* AES Cipher Algorithm */
@@ -176,7 +176,7 @@ int superaes_decrypt(const uint16_t *in, uint16_t *out, const struct key *key)
 {
     int round_amount, i;
 
-    round_amount = key->size / BLOCK_SIZE_IN_WORD;
+    round_amount = key->size / BLOCK_SIZE_IN_WORD / WORD_SIZE - 1;
     memcpy(out, in, sizeof(uint16_t) * BLOCK_SIZE_IN_INT16);
 
     /* AES Decipher Algorithm */
