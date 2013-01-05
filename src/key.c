@@ -64,7 +64,7 @@ struct key *read_key(FILE *f)
     n = 0;
     while ((read = fread(current->buffer, sizeof(uint8_t), BUFFER_SIZE, f)) > 0) {
         if (read != BUFFER_SIZE) {
-            fprintf(stderr, "error: key size is not a multiple of %d bytes.",
+            fprintf(stderr, "error: key size is not a multiple of %d bytes\n",
                     BUFFER_SIZE);
             error = 1;
             goto out;
@@ -80,7 +80,7 @@ struct key *read_key(FILE *f)
         goto out;
     }
     if (!is_valid_key_length_buffers(n)) {
-        fprintf(stderr, "error: key size is not a valid length");
+        fprintf(stderr, "error: key size is not a valid length\n");
         error = 1;
         goto out;
     }
