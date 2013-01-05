@@ -18,6 +18,8 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+#include <errno.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -60,29 +62,100 @@ error:
     return -1;
 }
 
+#define DEFAULT_INPUT stdin
+#define DEFAULT_OUTPUT stdout
+
 int main(int argc, char *argv[])
 {
     int      to_read,
              read,
              error,
-             i;
+             i,
+             option_index,
+             o;
     uint8_t  buffer[BLOCK_SIZE_IN_INT8];
     FILE    *in,
-            *out;
+            *out,
+            *key_file;
 
     struct key *key = NULL,
                *expanded_key = NULL;
     enum action_type action;
 
+    char          short_options[] = "dek:o:";
+    struct option long_options[] = {
+        {"decrypt",  no_argument,       (int*) &action, ACTION_TYPE_DECRYPT},
+        {"encrypt",  no_argument,       (int*) &action, ACTION_TYPE_ENCRYPT},
+        {"key-file", required_argument,              0,                 'k'},
+        {"output",   required_argument,              0,                 'o'},
+        {0, 0, 0, 0}
+    };
+
     /* No error for the moment */
     error = 0;
 
-    /* Parsing command line arguments */
-    /* TODO: Argument parsing */
-    in = stdin;
-    out = stdout;
+    /* Default values */
+    in = DEFAULT_INPUT;
+    out = DEFAULT_OUTPUT;
     action = ACTION_TYPE_ENCRYPT;
-    key = read_key(fopen(argv[1], "r"));
+    key_file = NULL;
+
+    /* Parsing command line arguments */
+    while ((o = getopt_long(argc, argv, short_options, long_options, &option_index)) >= 0) {
+        switch (o) {
+            case 'd':
+                action = ACTION_TYPE_DECRYPT;
+                break;
+
+            case 'e':
+                action = ACTION_TYPE_ENCRYPT;
+                break;
+
+            case 'k':
+                key_file = fopen(optarg, "r");
+                if (key_file == NULL) {
+                    error = 1;
+                    if (errno == ENOENT) {
+                        fprintf(stderr, "error: Key file doesn't exists\n");
+                    } else {
+                        perror("opening key file");
+                    }
+                    goto out;
+                }
+                break;
+
+            case 'o':
+                out = fopen(optarg, "w");
+                if (out == NULL) {
+                    error = 1;
+                    perror("opening output file");
+                    goto out;
+                }
+                break;
+
+            case '?':
+            default:
+                error = 1;
+                goto out;
+        }
+    }
+
+    if (optind < argc) {
+        in = fopen(argv[optind], "r");
+        if (in == NULL) {
+            error = 1;
+            perror("opening input file");
+            goto out;
+        }
+    }
+
+    if (key_file == NULL) {
+        fprintf(stderr, "error: no key file specified");
+        goto out;
+    }
+
+
+    key = read_key(key_file);
     if (key == NULL) {
         error = 1;
         goto out;
@@ -133,6 +206,16 @@ out:
     }
     if (expanded_key != NULL) {
         destroy_key(expanded_key);
+    }
+    if (key_file != NULL) {
+        fclose(key_file);
+    }
+    if (in != NULL) {
+        fclose(in);
+    }
+    if (out != NULL) {
+        fflush(out);
+        fclose(out);
     }
     if (error)
         return EXIT_FAILURE;
