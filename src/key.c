@@ -104,6 +104,7 @@ out:
         free(current);
         current = next;
     }
+    free(current);
     if (error)
         return NULL;
     return key;
