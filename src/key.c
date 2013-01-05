@@ -157,7 +157,7 @@ struct key *superaes_KeyExpansion(struct key *in)
                 n_word_key,
                 n_word_out;
     struct key *out;
-    int16_t     temp[WORD_SIZE];
+    uint16_t    temp[WORD_SIZE];
 
     if (!is_valid_key_length_bits(in->size * BITS_IN_INT16))
         return NULL;
