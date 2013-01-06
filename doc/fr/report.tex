@@ -51,7 +51,7 @@ taille, représenté par la figure~\ref{fig:aesbloc}. Un bloc est représenté p
 une matrice de 4 sur 4 \og atomes \fg\ (surligné en vert dans la
 figure~\ref{fig:aesbloc}).
 
-Une ligne de cette matrice est appelé un \og mot \fg\ (surligné en rouge dans
+Une ligne de cette matrice est appelée un \og mot \fg\ (surligné en rouge dans
 la figure~\ref{fig:aesbloc}).
 
 \section{Contexte}
@@ -61,16 +61,16 @@ De nos jours, le standard de chiffrement symétrique le plus utilisé est AES
 standard DES\footnote{\emph{Data Encryption Standard}} qui peut être
 \og brute-forcé \fg.\footnote{\url{https://en.wikipedia.org/wiki/EFF_DES_cracker}}
 
-AES est reconnu dans le monde de la cryptographie comme étant le standard le plus sûr.
-(au jour où ce rapport est rédigé) Il est notamment, au jour où ce rapport est rédigé,
-utilisé par le gouvernement des États-Unis pour sécuriser ses données.
+Au jour où ce rapport est rédigé, AES est reconnu dans le monde de la
+cryptographie comme étant le standard le plus sûr. Il est notamment utilisé par
+le gouvernement des États-Unis pour sécuriser ses données.
 
-AES repose un enchainement de fonctions non-linéaires qui mélange et substituent les
-atome d'un bloc des données à chiffrer. Dans un sens, on pourrait le définir comme une
+AES repose sur un enchaînement de fonctions non-linéaires qui mélangent et substituent les
+atomes d'un bloc des données à chiffrer. Dans un sens, on pourrait le définir comme une
 version améliorer d'Enigma.\footnote{\url{https://fr.wikipedia.org/wiki/Enigma_(machine)}}.
 
-La non-linéarité de ces fonctions reposent sur les corps de finis de Galois. Le
-corps fini de Galois utilisé pour AES contient $2^{8}$ éléments. Les atômes
+La non-linéarité de ces fonctions repose sur les corps finis de Galois. Le
+corps fini de Galois utilisé pour AES contient $2^{8}$ éléments. Les atomes
 sont donc représentés sur un octet. (soit 8 bits)
 
 \section{Objectif}
@@ -81,8 +81,8 @@ reposant sur le principe d'AES. Contrairement à AES, cet algorithme de
 chiffrement devra utiliser un corps de Galois à $2^{16}$ éléments ; les atomes
 de l'algorithme seront donc représentés sur deux octets. (soit 16 bits)
 
-Ce projet a donc été baptisé \og SuperAES \fg\ dû au fait qu'il double la complexité
-de l'algorithme AES.
+Ce projet a donc été baptisé \og SuperAES \fg\ car il double la complexité de
+l'algorithme AES.
 
 
 \chapter{Modélisation mathématique}
@@ -90,12 +90,13 @@ de l'algorithme AES.
 \section{Choix des constantes}
 
 Nous avons choisi les constantes de notre projet en utilisant au maximum des
-nombres premiers. Il est a noter qu'il y a aucune preuve mathématique que
-cela ne rend pas plus difficile la cryptanalyse de notre algorithme.
+nombres premiers. Rappelons qu'il n'y a aucune preuve mathématique justifiant
+que l'utilisation des nombres premiers rendent plus difficile la cryptanalyse
+de notre algorithme.
 
 \section{Corps de Galois}
 
-Pour notre implémentation de \og Super AES \fg, nous avons choisis le corps
+Pour notre implémentation de \og Super AES \fg, nous avons choisi le corps
 $G\mathbb{F}_{2^{16}}$ défini par l'équation~\ref{eq:galoisfield}.
 
 \begin{equation}
@@ -116,7 +117,7 @@ D^16+D^13+D^11+D^7+D^6+D^2+1
 \end{verbatim}
 
 Nous avons choisi ce polynôme car c'est celui qui possède le plus gros nombre
-de monômes de degrés premiers par rapport au nombre de monômes de degrés non
+de monômes de degrés premier par rapport au nombre de monômes de degrés non
 premier.
 
 \section{\emph{SubBytes}}
@@ -152,7 +153,7 @@ A = \left(
 \right)
 \end{equation}
 
-Elle a été généré par :
+Elle a été générée par :
 
 \begin{verbatim}
 octave:1> A_matrix = toeplitz([1 1 1 0 1 0 1 0 0 0 1 0 1 0 0 0],
@@ -230,13 +231,13 @@ C' = \left(
 \section{\emph{MixColumns}}
 
 Pour la matrice $X$ de la fonction \emph{MixColumns} nous avons choisi une
-matrice circulant avec comme vecteur de base les 4 plus grand nombres premiers
+matrice circulante avec, comme vecteur de base, les 4 plus grand nombres premiers
 inférieurs à $2^{16}$, c'est-à-dire : 65479, 65497, 65519 et 65521.
 
 Pour que la matrice $X$ soit réversible nous avons remplacé 65521 par 65520 qui
 n'est pas premier.
 
-Notre matrice $X$ final est donc défini par l'équation~\ref{eq:xmatrix}.
+Notre matrice $X$ finale est donc définie par l'équation~\ref{eq:xmatrix}.
 
 \begin{equation}
 \label{eq:xmatrix}
@@ -268,8 +269,88 @@ X' = \left(
 
 \chapter{Implémentation}
 
+\section{Pré-calculs}
+
+Nous avons choisi d'implémenter \og SuperAES \fg\ en C. Bien qu'il existe des
+bibliothèques gérant les champs de Galois, nous avons poussé le défi jusqu'à
+n'utiliser que la
+\emph{glibc}.\footnote{\url{https://fr.wikipedia.org/wiki/GNU_C_Library}}
+
+Nous avons donc fait des pré-calculs que nous avons tabulés. Il y a plusieurs
+intérêts à cela :
+
+\begin{itemize}
+\item les pré-calculs augmentent les performances et les temps
+d'exécution\footnote{Le prix a payer est une taille plus grande
+du binaire. Mais dans notre cas, la taille reste raisonnable.} ;
+
+\item ils évitent d'avoir à implémenter nous mêmes les algorithmes
+de multiplication des champs de Galois.
+\end{itemize}
+
+Nous avons donc tabulé les calculs suivants :
+\begin{itemize}
+\item les résultats de la fonction \emph{SubBytes} ;
+\item les résultats de la fonction \emph{InvSubBytes} ;
+\item les tables de multiplication pour chacun des éléments
+uniques des matrices $X$ et $X'$.
+\end{itemize}
+
+\section{Bourrage}
+
+L'algorithme requiert que le message soit découpé en messages de 16 atomes.
+Nous avons donc utilisé le bourrage standard \emph{PKCS~\#7} défini à la
+section 6.3 de la RFC~5652.\footnote{\url{http://www.ietf.org/rfc/rfc5652.txt}}
+
+Il s'agit de remplir les octets à combler par le nombre d'octet à combler.
+
+Par exemple, imaginons le message suivant :
+\begin{verbatim}
+01 23    45 67    89 AB    CD EF
+10 11    12 13    14 15    12 15
+16 17    18 19    20
+\end{verbatim}
+Il est compte de 22 octets. Pour pouvoir être traité par \og SuperAES \fg, il doit
+faire 32 octets.
+Il faut donc combler $21 - 32 = 11$~octets, on comble donc les octets restants
+par le nombre $11 = (\mbox{0B})_{16}$. Le message obtenu est donc :
+\begin{verbatim}
+01 23    45 67    89 AB    CD EF
+10 11    12 13    14 15    12 15
+16 17    18 19    20 0B    0B 0B
+0B 0B    0B 0B    0B 0B    0B 0B
+\end{verbatim}
+
+\section{\emph{KeyExpansion}}
+
+Nous avons arbitrairement défini le nombre de rondes comme suit dans la
+figure~\ref{fig:rondes}.
+
+\begin{figure}[h!]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Taille de la clé} & \textbf{Nombre de rondes} \\
+\hline
+\hline
+320 & 15 \\ \hline
+480 & 30 \\ \hline
+640 & 45 \\ \hline
+\end{tabular}
+\label{fig:rondes}
+\caption{Nombre de rondes pour chaque taille de clé}
+\end{figure}
+
 \chapter{Conclusion}
 
+On apprend mieux par la pratique que par la théorie. C'est pourquoi ce projet
+concret nous a donc amené à mieux comprendre le fonctionnement d'AES, et le
+modèle mathématique sur lequel il repose.
+
+Il est encore possible d'améliorer notre programme en implémentant la
+suppression des bits de bourrage au déchiffrement. Qui plus est, nous avons
+annoté certaines parties de notre code qui n'étaient pas élégantes. Il est donc
+encore possible d'améliorer notre programme en nettoyant ces parties.
 
 \begin{thebibliography}{99}
 
