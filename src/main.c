@@ -163,8 +163,6 @@ int main(int argc, char *argv[])
     else {
         expanded_key = superaes_KeyExpansion(key);
     }
-    if (argc > 2)
-        action = ACTION_TYPE_DECRYPT;
 
     /* Read blocks and encrypt them*/
     /* XXX: main function is making the coffee */
